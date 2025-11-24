@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: ./run <filename>"
+    echo "Example: ./run A"
+    exit 1
+fi
+
+FILENAME="$1"
+
+# Add .cc extension if not provided
+if [[ ! "$FILENAME" =~ \.cc$ ]]; then
+    FILENAME="${FILENAME}.cc"
+fi
+
+if [ ! -f "$FILENAME" ]; then
+    echo "File $FILENAME does not exist!"
+    exit 1
+fi
+
+# Extract base name without extension
+BASENAME="${FILENAME%.cc}"
+
+echo "Compiling $FILENAME..."
+g++ -std=c++17 -O2 -Wall -Wextra -DNEAL_DEBUG "$FILENAME" -o "$BASENAME"
+
+if [ $? -ne 0 ]; then
+    echo "Compilation failed!"
+    exit 1
+fi
+
+echo "Running $BASENAME..."
+echo "-------------------"
+./"$BASENAME"

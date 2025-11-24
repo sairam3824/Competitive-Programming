@@ -1,0 +1,135 @@
+# Competitive Programming setup
+
+# Clean up old function definitions (if they exist)
+unfunction A.cc B.cc C.cc D.cc E.cc F.cc 2>/dev/null
+
+# Get the directory where this script is located
+CP_DIR="$( cd "$( dirname "${(%):-%x}" )" && pwd )"
+
+# Function to create a file from template
+function cf() {
+    if [ -z "$1" ]; then
+        echo "Usage: cf <filename>"
+        echo "Examples:"
+        echo "  cf A.cc      -> creates cpp/A.cc"
+        echo "  cf 342.java  -> creates java/342.java"
+        echo "  cf app.py    -> creates py/app.py"
+        return 1
+    fi
+    
+    FILENAME="$1"
+    
+    # Determine folder based on extension
+    if [[ "$FILENAME" =~ \.cc$ ]] || [[ "$FILENAME" =~ \.cpp$ ]]; then
+        FOLDER="codes/cpp"
+        TEMPLATE="$CP_DIR/templates/template.cc"
+    elif [[ "$FILENAME" =~ \.java$ ]]; then
+        FOLDER="codes/java"
+        TEMPLATE="$CP_DIR/templates/template.java"
+    elif [[ "$FILENAME" =~ \.py$ ]]; then
+        FOLDER="codes/py"
+        TEMPLATE="$CP_DIR/templates/template.py"
+    else
+        echo "Unsupported file extension. Use .cc, .cpp, .java, or .py"
+        return 1
+    fi
+    
+    TARGET="$CP_DIR/$FOLDER/$FILENAME"
+    
+    if [ -f "$TARGET" ]; then
+        echo "File $TARGET already exists!"
+        return 1
+    fi
+    
+    # Create from template if available, otherwise create empty file
+    if [ -n "$TEMPLATE" ] && [ -f "$TEMPLATE" ]; then
+        cp "$TEMPLATE" "$TARGET"
+    else
+        touch "$TARGET"
+    fi
+    
+    echo "Created $FOLDER/$FILENAME"
+}
+
+# Function to compile and run
+function cfrun() {
+    if [ -z "$1" ]; then
+        echo "Usage: cfrun <filename>"
+        echo "Examples:"
+        echo "  cfrun A.cc      -> compiles and runs cpp/A.cc"
+        echo "  cfrun 342.java  -> compiles and runs java/342.java"
+        echo "  cfrun app.py    -> runs py/app.py"
+        return 1
+    fi
+    
+    FILENAME="$1"
+    
+    # Determine folder and compilation based on extension
+    if [[ "$FILENAME" =~ \.cc$ ]] || [[ "$FILENAME" =~ \.cpp$ ]]; then
+        FOLDER="codes/cpp"
+        FILEPATH="$CP_DIR/$FOLDER/$FILENAME"
+        
+        if [ ! -f "$FILEPATH" ]; then
+            echo "File $FILEPATH does not exist!"
+            return 1
+        fi
+        
+        BASENAME="${FILENAME%.*}"
+        OUTFILE="$CP_DIR/$FOLDER/$BASENAME"
+        
+        echo "Compiling $FOLDER/$FILENAME..."
+        cd "$CP_DIR/$FOLDER"
+        g++ -std=c++17 -O2 -Wall -Wextra -DNEAL_DEBUG "$FILENAME" -o "$BASENAME"
+        
+        if [ $? -ne 0 ]; then
+            echo "Compilation failed!"
+            return 1
+        fi
+        
+        echo "Running $BASENAME..."
+        echo "-------------------"
+        ./"$BASENAME"
+        
+    elif [[ "$FILENAME" =~ \.java$ ]]; then
+        FOLDER="codes/java"
+        FILEPATH="$CP_DIR/$FOLDER/$FILENAME"
+        
+        if [ ! -f "$FILEPATH" ]; then
+            echo "File $FILEPATH does not exist!"
+            return 1
+        fi
+        
+        CLASSNAME="${FILENAME%.java}"
+        
+        echo "Compiling $FOLDER/$FILENAME..."
+        cd "$CP_DIR/$FOLDER"
+        javac "$FILENAME"
+        
+        if [ $? -ne 0 ]; then
+            echo "Compilation failed!"
+            return 1
+        fi
+        
+        echo "Running $CLASSNAME..."
+        echo "-------------------"
+        java "$CLASSNAME"
+        
+    elif [[ "$FILENAME" =~ \.py$ ]]; then
+        FOLDER="codes/py"
+        FILEPATH="$CP_DIR/$FOLDER/$FILENAME"
+        
+        if [ ! -f "$FILEPATH" ]; then
+            echo "File $FILEPATH does not exist!"
+            return 1
+        fi
+        
+        echo "Running $FOLDER/$FILENAME..."
+        echo "-------------------"
+        cd "$CP_DIR/$FOLDER"
+        python3 "$FILENAME"
+        
+    else
+        echo "Unsupported file extension. Use .cc, .cpp, .java, or .py"
+        return 1
+    fi
+}
