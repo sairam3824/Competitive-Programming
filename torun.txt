@@ -20,9 +20,12 @@
    MAC / LINUX (Zsh/Bash):
    Add this to your ~/.zshrc or ~/.bashrc:
    source /path/to/Competitive-Programming/.zshrc_competitive_programming
-   
+
    Then run:
    source ~/.zshrc
+   OR
+   If in folder 
+   source .zshrc_competitive_programming
 
    WINDOWS:
    Option 1 (Recommended): Use WSL or Git Bash and follow Mac/Linux instructions above.
