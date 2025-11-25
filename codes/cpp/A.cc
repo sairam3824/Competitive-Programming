@@ -59,14 +59,18 @@ template <typename Head, typename... Tail> void dbg_out(Head H, Tail... T) {
 #define dbg(...)
 #endif
 
-void run_case() {}
+void run_case() {
+  int a, b, c, d;
+  cin >> a >> b >> c >> d;
+  cout << "YES" << endl;
+}
 
 int main() {
   ios::sync_with_stdio(false);
   cin.tie(nullptr);
 
 #ifdef NEAL_DEBUG
-  freopen("PROBLEM_NAME-1.in", "r", stdin);
+  freopen("A-1.in", "r", stdin);
 #endif
 
   int tests = 1;

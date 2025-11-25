@@ -43,7 +43,8 @@ function cf() {
     
     # Create from template if available, otherwise create empty file
     if [ -n "$TEMPLATE" ] && [ -f "$TEMPLATE" ]; then
-        cp "$TEMPLATE" "$TARGET"
+        BASENAME="${FILENAME%.*}"
+        sed "s/PROBLEM_NAME/$BASENAME/g" "$TEMPLATE" > "$TARGET"
     else
         touch "$TARGET"
     fi
@@ -88,7 +89,29 @@ function cfrun() {
         
         echo "Running $BASENAME..."
         echo "-------------------"
-        ./"$BASENAME"
+        
+        EXPECTED_FILE="$CP_DIR/$FOLDER/${BASENAME}-1.out"
+        if [ -f "$EXPECTED_FILE" ]; then
+            echo "Expected Output:"
+            cat "$EXPECTED_FILE"
+            echo "-------------------"
+            echo "Your Output:"
+            
+            ./"$BASENAME" | tee .temp_out
+            
+            python3 -c "
+import sys
+try:
+    with open(sys.argv[1]) as f1, open(sys.argv[2]) as f2:
+        e = [l.strip() for l in f1 if l.strip()]
+        o = [l.strip() for l in f2 if l.strip()]
+    p = sum(1 for a,b in zip(e,o) if a==b)
+    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+except: pass" "$EXPECTED_FILE" .temp_out
+            rm .temp_out
+        else
+            ./"$BASENAME"
+        fi
         
     elif [[ "$FILENAME" =~ \.java$ ]]; then
         FOLDER="codes/java"
@@ -112,7 +135,29 @@ function cfrun() {
         
         echo "Running $CLASSNAME..."
         echo "-------------------"
-        java "$CLASSNAME"
+        
+        EXPECTED_FILE="$CP_DIR/$FOLDER/${CLASSNAME}-1.out"
+        if [ -f "$EXPECTED_FILE" ]; then
+            echo "Expected Output:"
+            cat "$EXPECTED_FILE"
+            echo "-------------------"
+            echo "Your Output:"
+            
+            java "$CLASSNAME" | tee .temp_out
+            
+            python3 -c "
+import sys
+try:
+    with open(sys.argv[1]) as f1, open(sys.argv[2]) as f2:
+        e = [l.strip() for l in f1 if l.strip()]
+        o = [l.strip() for l in f2 if l.strip()]
+    p = sum(1 for a,b in zip(e,o) if a==b)
+    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+except: pass" "$EXPECTED_FILE" .temp_out
+            rm .temp_out
+        else
+            java "$CLASSNAME"
+        fi
         
     elif [[ "$FILENAME" =~ \.py$ ]]; then
         FOLDER="codes/py"
@@ -125,11 +170,45 @@ function cfrun() {
         
         echo "Running $FOLDER/$FILENAME..."
         echo "-------------------"
-        cd "$CP_DIR/$FOLDER"
-        python3 "$FILENAME"
+        
+        BASENAME="${FILENAME%.py}"
+        EXPECTED_FILE="$CP_DIR/$FOLDER/${BASENAME}-1.out"
+        if [ -f "$EXPECTED_FILE" ]; then
+            echo "Expected Output:"
+            cat "$EXPECTED_FILE"
+            echo "-------------------"
+            echo "Your Output:"
+            
+            cd "$CP_DIR/$FOLDER"
+            python3 "$FILENAME" | tee .temp_out
+            
+            python3 -c "
+import sys
+try:
+    with open(sys.argv[1]) as f1, open(sys.argv[2]) as f2:
+        e = [l.strip() for l in f1 if l.strip()]
+        o = [l.strip() for l in f2 if l.strip()]
+    p = sum(1 for a,b in zip(e,o) if a==b)
+    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+except: pass" "$EXPECTED_FILE" .temp_out
+            rm .temp_out
+        else
+            cd "$CP_DIR/$FOLDER"
+            python3 "$FILENAME"
+        fi
         
     else
         echo "Unsupported file extension. Use .cc, .cpp, .java, or .py"
         return 1
     fi
+}
+
+# Alias for convenience
+alias run='cfrun'
+
+# Start Competitive Companion listener
+function cflisten() {
+    echo "Starting Competitive Companion listener..."
+    cd "$CP_DIR"
+    node listener.js
 }

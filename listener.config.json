@@ -1,0 +1,7 @@
+{
+  "defaultLanguage": "cpp",
+  "createTestFiles": true,
+  "openInEditor": false,
+  "port": 10043,
+  "host": "127.0.0.1"
+}

@@ -3,16 +3,28 @@ import time
 import tracemalloc
 from typing import List, Tuple, Set, Dict
 
+# Set recursion depth just in case
+sys.setrecursionlimit(2000)
+
 def solve():
-    # Your solution here
     pass
 
 def main():
+    # Check for input file
+    import os
+    if os.path.exists("PROBLEM_NAME-1.in"):
+        sys.stdin = open("PROBLEM_NAME-1.in", "r")
+
     tracemalloc.start()
     start_time = time.time()
     
     tests = 1
-    # tests = int(input())
+    try:
+        line = sys.stdin.readline()
+        if line:
+            tests = int(line)
+    except ValueError:
+        pass
     
     for _ in range(tests):
         solve()

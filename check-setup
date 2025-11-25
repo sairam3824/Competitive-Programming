@@ -1,0 +1,68 @@
+#!/bin/bash
+
+echo "🔍 Checking Competitive Companion setup..."
+echo ""
+
+# Check Node.js
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node --version)
+    echo "✅ Node.js installed: $NODE_VERSION"
+else
+    echo "❌ Node.js not found"
+    echo "   Install with: brew install node (macOS) or sudo apt-get install nodejs (Linux)"
+    exit 1
+fi
+
+# Check if templates exist
+echo ""
+echo "📄 Checking templates..."
+for template in templates/template.cc templates/template.java templates/template.py; do
+    if [ -f "$template" ]; then
+        echo "✅ $template"
+    else
+        echo "❌ $template not found"
+    fi
+done
+
+# Check if code folders exist
+echo ""
+echo "📁 Checking code folders..."
+for folder in codes/cpp codes/java codes/py; do
+    if [ -d "$folder" ]; then
+        echo "✅ $folder/"
+    else
+        echo "⚠️  $folder/ not found (will be created if needed)"
+    fi
+done
+
+# Check if listener exists
+echo ""
+if [ -f "listener.js" ]; then
+    echo "✅ listener.js found"
+else
+    echo "❌ listener.js not found"
+    exit 1
+fi
+
+# Check if config exists
+if [ -f "listener.config.json" ]; then
+    echo "✅ listener.config.json found"
+    echo ""
+    echo "📋 Current configuration:"
+    cat listener.config.json | grep -E '"(defaultLanguage|createTestFiles|port)"' | sed 's/^/   /'
+else
+    echo "⚠️  listener.config.json not found (using defaults)"
+fi
+
+echo ""
+echo "🎉 Setup looks good! Ready to use Competitive Companion."
+echo ""
+echo "Next steps:"
+echo "1. Install browser extension:"
+echo "   Chrome: https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl"
+echo "   Firefox: https://addons.mozilla.org/en-US/firefox/addon/competitive-companion/"
+echo ""
+echo "2. Start the listener:"
+echo "   ./start-listener"
+echo ""
+echo "3. Open a problem and click the extension icon!"

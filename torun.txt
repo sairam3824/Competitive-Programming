@@ -1,0 +1,40 @@
+✅ COMPETITIVE COMPANION INTEGRATION COMPLETE!
+
+📦 What was added:
+- listener.js - Receives problems from browser extension
+- start-listener - Script to start the listener
+- listener.config.json - Configuration file
+- check-setup - Verify your setup
+- QUICKSTART.md - Detailed guide
+- Updated README.md with integration docs
+- Added 'cflisten' command to .zshrc_competitive_programming
+
+🚀 QUICK START:
+
+1. Install browser extension:
+   Chrome: https://chromewebstore.google.com/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl
+   Firefox: https://addons.mozilla.org/en-US/firefox/addon/competitive-companion/
+
+2. Setup your shell environment:
+
+   MAC / LINUX (Zsh/Bash):
+   Add this to your ~/.zshrc or ~/.bashrc:
+   source /path/to/Competitive-Programming/.zshrc_competitive_programming
+   
+   Then run:
+   source ~/.zshrc
+
+   WINDOWS:
+   Option 1 (Recommended): Use WSL or Git Bash and follow Mac/Linux instructions above.
+   Option 2 (PowerShell): You'll need to manually run the listener and compile commands, or set up similar aliases in your PowerShell profile.
+
+3. Start listener:
+   cflisten  (if you set up the shell alias)
+   OR
+   ./start-listener
+
+4. Open any problem (Codeforces, AtCoder, etc.) and click the extension icon
+
+5. Files auto-created with test cases! Just run:
+   cfrun A.cc
+

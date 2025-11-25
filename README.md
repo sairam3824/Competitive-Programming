@@ -23,8 +23,7 @@ A streamlined setup for competitive programming with support for C++, Java, and 
 │   ├── template.java # Java template with BufferedReader
 │   └── template.py   # Python template with performance tracking
 ├── .zshrc_competitive_programming # Shell functions for quick workflow
-├── create            # Script to create new files from templates
-└── run               # Script to compile and run solutions
+└── start-listener    # Script to start the listener
 ```
 
 ## Setup Instructions
@@ -56,7 +55,7 @@ A streamlined setup for competitive programming with support for C++, Java, and 
 2. Navigate to the project directory
 3. Make scripts executable:
    ```bash
-   chmod +x create run setup.sh
+   chmod +x start-listener
    ```
 
 #### Option 1: Use Shell Functions (Recommended)
@@ -91,19 +90,7 @@ cfrun 342.java # Compiles and runs codes/java/342.java
 cfrun app.py   # Runs codes/py/app.py
 ```
 
-#### Option 2: Use Scripts Directly
 
-Navigate to the project directory and use the scripts:
-
-**Create a new file:**
-```bash
-./create A.cc   # Creates A.cc from template.cc in current directory
-```
-
-**Compile and run:**
-```bash
-./run A.cc      # Compiles and runs A.cc
-```
 
 ### Windows
 
@@ -249,12 +236,82 @@ cfrun solution.py
 - Memory tracking with `tracemalloc`
 - Time tracking with `time` module
 
+## Competitive Companion Integration
+
+This setup integrates with the [Competitive Companion](https://github.com/jmerle/competitive-companion) browser extension to automatically parse problems from online judges.
+
+### Setup
+
+1. **Install the browser extension:**
+   - **Chrome**: [Competitive Companion on Chrome Web Store](https://chromewebstore.google.com/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl)
+   - **Firefox**: [Competitive Companion on Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/competitive-companion/)
+
+2. **Install Node.js** (if not already installed):
+   ```bash
+   # macOS (using Homebrew)
+   brew install node
+   
+   # Linux (Ubuntu/Debian)
+   sudo apt-get install nodejs npm
+   
+   # Windows: Download from https://nodejs.org/
+   ```
+
+3. **Start the listener:**
+   ```bash
+   ./start-listener
+   ```
+   
+   Keep this running in a terminal while solving problems.
+
+### Usage
+
+1. **Start the listener** in your terminal:
+   ```bash
+   ./start-listener
+   ```
+
+2. **Open a problem** in your browser (Codeforces, AtCoder, LeetCode, etc.)
+
+3. **Click the Competitive Companion icon** in your browser toolbar (green plus icon)
+
+4. **Files are automatically created:**
+   - Solution file from template (e.g., `codes/cpp/A.cc`)
+   - Test case input files (e.g., `A-1.in`, `A-2.in`)
+   - Test case output files (e.g., `A-1.out`, `A-2.out`)
+   - Problem info file (e.g., `A.info.txt`)
+
+5. **Start coding** and run with:
+   ```bash
+   cfrun A.cc
+   ```
+
+### Configuration
+
+Edit `listener.js` to customize:
+- `defaultLanguage`: Change to 'cpp', 'java', or 'py'
+- `createTestFiles`: Set to false to skip test file creation
+- `PORT`: Change if port 10043 is already in use
+
+### Supported Platforms
+
+Competitive Companion works with 60+ online judges including:
+- Codeforces
+- AtCoder
+- CodeChef
+- LeetCode
+- HackerRank
+- TopCoder
+- SPOJ
+- And many more!
+
 ## Tips
 
 - **Multiple test cases**: Uncomment `cin >> tests;` in templates
 - **Debug mode**: C++ template automatically reads from `<filename>-1.in` when compiled with `-DNEAL_DEBUG`
 - **Performance**: All templates include automatic time and memory usage reporting
 - **Organization**: Keep solutions organized by language in respective folders
+- **Auto-parse problems**: Use Competitive Companion to automatically create files with test cases
 
 ## Troubleshooting
 
@@ -270,7 +327,7 @@ Add MinGW bin directory to your PATH environment variable, or use WSL.
 ### "Permission denied" on macOS/Linux
 Make scripts executable:
 ```bash
-chmod +x create run setup.sh
+chmod +x start-listener
 ```
 
 ### Shell functions not working

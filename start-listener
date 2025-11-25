@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Start the Competitive Companion listener
+echo "Starting Competitive Companion listener..."
+node listener.js
