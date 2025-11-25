@@ -1,8 +1,0 @@
-Problem: A. Square?
-URL: https://codeforces.com/contest/2167/problem/A
-Time Limit: 1000ms
-Memory Limit: 256MB
-Tests: 1
-
-Test cases created:
-  - A-1.in / A-1.out
