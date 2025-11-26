@@ -21,7 +21,7 @@ function cf() {
     
     # Determine folder based on extension
     if [[ "$FILENAME" =~ \.cc$ ]] || [[ "$FILENAME" =~ \.cpp$ ]]; then
-        FOLDER="codes/cpp"
+        FOLDER="codes/cpp/src"
         TEMPLATE="$CP_DIR/templates/template.cc"
     elif [[ "$FILENAME" =~ \.java$ ]]; then
         FOLDER="codes/java"
@@ -67,8 +67,9 @@ function cfrun() {
     
     # Determine folder and compilation based on extension
     if [[ "$FILENAME" =~ \.cc$ ]] || [[ "$FILENAME" =~ \.cpp$ ]]; then
-        FOLDER="codes/cpp"
-        FILEPATH="$CP_DIR/$FOLDER/$FILENAME"
+        SRC_FOLDER="codes/cpp/src"
+        TEST_FOLDER="codes/cpp"
+        FILEPATH="$CP_DIR/$SRC_FOLDER/$FILENAME"
         
         if [ ! -f "$FILEPATH" ]; then
             echo "File $FILEPATH does not exist!"
@@ -76,11 +77,11 @@ function cfrun() {
         fi
         
         BASENAME="${FILENAME%.*}"
-        OUTFILE="$CP_DIR/$FOLDER/$BASENAME"
+        OUTFILE="$CP_DIR/$TEST_FOLDER/$BASENAME"
         
-        echo "Compiling $FOLDER/$FILENAME..."
-        cd "$CP_DIR/$FOLDER"
-        g++ -std=c++17 -O2 -Wall -Wextra -DNEAL_DEBUG "$FILENAME" -o "$BASENAME"
+        echo "Compiling $SRC_FOLDER/$FILENAME..."
+        cd "$CP_DIR/$SRC_FOLDER"
+        g++ -std=c++17 -O2 -Wall -Wextra -DDEBUG "$FILENAME" -o "$OUTFILE"
         
         if [ $? -ne 0 ]; then
             echo "Compilation failed!"
@@ -90,14 +91,21 @@ function cfrun() {
         echo "Running $BASENAME..."
         echo "-------------------"
         
-        EXPECTED_FILE="$CP_DIR/$FOLDER/${BASENAME}-1.out"
+        cd "$CP_DIR/$TEST_FOLDER"
+        
+        EXPECTED_FILE="$CP_DIR/$TEST_FOLDER/${BASENAME}-1.out"
+        INPUT_FILE="$CP_DIR/$TEST_FOLDER/${BASENAME}-1.in"
         if [ -f "$EXPECTED_FILE" ]; then
             echo "Expected Output:"
             cat "$EXPECTED_FILE"
             echo "-------------------"
             echo "Your Output:"
             
-            ./"$BASENAME" | tee .temp_out
+            if [ -f "$INPUT_FILE" ]; then
+                ./"$BASENAME" < "$INPUT_FILE" | tee .temp_out
+            else
+                ./"$BASENAME" | tee .temp_out
+            fi
             
             python3 -c "
 import sys
@@ -110,7 +118,11 @@ try:
 except: pass" "$EXPECTED_FILE" .temp_out
             rm .temp_out
         else
-            ./"$BASENAME"
+            if [ -f "$INPUT_FILE" ]; then
+                ./"$BASENAME" < "$INPUT_FILE"
+            else
+                ./"$BASENAME"
+            fi
         fi
         
     elif [[ "$FILENAME" =~ \.java$ ]]; then
@@ -137,13 +149,18 @@ except: pass" "$EXPECTED_FILE" .temp_out
         echo "-------------------"
         
         EXPECTED_FILE="$CP_DIR/$FOLDER/${CLASSNAME}-1.out"
+        INPUT_FILE="$CP_DIR/$FOLDER/${CLASSNAME}-1.in"
         if [ -f "$EXPECTED_FILE" ]; then
             echo "Expected Output:"
             cat "$EXPECTED_FILE"
             echo "-------------------"
             echo "Your Output:"
             
-            java "$CLASSNAME" | tee .temp_out
+            if [ -f "$INPUT_FILE" ]; then
+                java "$CLASSNAME" < "$INPUT_FILE" | tee .temp_out
+            else
+                java "$CLASSNAME" | tee .temp_out
+            fi
             
             python3 -c "
 import sys
@@ -156,7 +173,11 @@ try:
 except: pass" "$EXPECTED_FILE" .temp_out
             rm .temp_out
         else
-            java "$CLASSNAME"
+            if [ -f "$INPUT_FILE" ]; then
+                java "$CLASSNAME" < "$INPUT_FILE"
+            else
+                java "$CLASSNAME"
+            fi
         fi
         
     elif [[ "$FILENAME" =~ \.py$ ]]; then
@@ -173,6 +194,8 @@ except: pass" "$EXPECTED_FILE" .temp_out
         
         BASENAME="${FILENAME%.py}"
         EXPECTED_FILE="$CP_DIR/$FOLDER/${BASENAME}-1.out"
+        INPUT_FILE="$CP_DIR/$FOLDER/${BASENAME}-1.in"
+        
         if [ -f "$EXPECTED_FILE" ]; then
             echo "Expected Output:"
             cat "$EXPECTED_FILE"
@@ -180,7 +203,11 @@ except: pass" "$EXPECTED_FILE" .temp_out
             echo "Your Output:"
             
             cd "$CP_DIR/$FOLDER"
-            python3 "$FILENAME" | tee .temp_out
+            if [ -f "$INPUT_FILE" ]; then
+                python3 "$FILENAME" < "$INPUT_FILE" | tee .temp_out
+            else
+                python3 "$FILENAME" | tee .temp_out
+            fi
             
             python3 -c "
 import sys
@@ -194,7 +221,11 @@ except: pass" "$EXPECTED_FILE" .temp_out
             rm .temp_out
         else
             cd "$CP_DIR/$FOLDER"
-            python3 "$FILENAME"
+            if [ -f "$INPUT_FILE" ]; then
+                python3 "$FILENAME" < "$INPUT_FILE"
+            else
+                python3 "$FILENAME"
+            fi
         fi
         
     else
