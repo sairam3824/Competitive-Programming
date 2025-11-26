@@ -1,14 +1,3 @@
-✅ COMPETITIVE COMPANION INTEGRATION COMPLETE!
-
-📦 What was added:
-- listener.js - Receives problems from browser extension
-- start-listener - Script to start the listener
-- listener.config.json - Configuration file
-- check-setup - Verify your setup
-- QUICKSTART.md - Detailed guide
-- Updated README.md with integration docs
-- Added 'cflisten' command to .zshrc_competitive_programming
-
 🚀 QUICK START:
 
 1. Install browser extension:
@@ -39,5 +28,7 @@
 4. Open any problem (Codeforces, AtCoder, etc.) and click the extension icon
 
 5. Files auto-created with test cases! Just run:
-   cfrun A.cc
+   cfrun filname.cc OR filname.java OR filname.py
+   Example
+   run A.cc
 
