@@ -35,7 +35,8 @@ const HOST = CONFIG.host;
 // Language-specific settings
 const LANG_CONFIG = {
   cpp: {
-    folder: 'codes/cpp',
+    folder: 'codes/cpp/src',
+    testFolder: 'codes/cpp',
     extension: '.cc',
     template: 'templates/template.cc',
   },
@@ -74,6 +75,7 @@ function createProblemFiles(problem) {
   const problemName = extractProblemName(problem);
   const filename = problemName + langConfig.extension;
   const filepath = path.join(__dirname, langConfig.folder, filename);
+  const testFolderPath = path.join(__dirname, langConfig.testFolder || langConfig.folder);
   
   console.log(`\n📝 Creating problem: ${problem.name}`);
   console.log(`   URL: ${problem.url}`);
@@ -106,13 +108,11 @@ function createProblemFiles(problem) {
     problem.tests.forEach((test, index) => {
       const testNum = index + 1;
       const inputFile = path.join(
-        __dirname,
-        langConfig.folder,
+        testFolderPath,
         `${problemName}-${testNum}.in`
       );
       const outputFile = path.join(
-        __dirname,
-        langConfig.folder,
+        testFolderPath,
         `${problemName}-${testNum}.out`
       );
       
@@ -124,8 +124,7 @@ function createProblemFiles(problem) {
   
   // Create a problem info file
   const infoFile = path.join(
-    __dirname,
-    langConfig.folder,
+    testFolderPath,
     `${problemName}.info.txt`
   );
   const infoContent = `Problem: ${problem.name}
