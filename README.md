@@ -308,10 +308,21 @@ Competitive Companion works with 60+ online judges including:
 ## Tips
 
 - **Multiple test cases**: Uncomment `cin >> tests;` in templates
-- **Debug mode**: C++ template automatically reads from `<filename>-1.in` when compiled with `-DNEAL_DEBUG`
+- **Debug mode**: C++ template automatically reads from `<filename>-1.in` when compiled with `-DDEBUG`
 - **Performance**: All templates include automatic time and memory usage reporting
 - **Organization**: Keep solutions organized by language in respective folders
 - **Auto-parse problems**: Use Competitive Companion to automatically create files with test cases
+
+## Important Note on Plagiarism
+
+**Warning**: Using the same template code across multiple submissions can trigger plagiarism detection systems on competitive programming platforms. Many online judges (like Codeforces) use sophisticated algorithms to detect code similarity.
+
+To avoid plagiarism issues:
+- Modify your template regularly (change variable names, reorder functions, adjust formatting)
+- Don't share your template with others
+- Customize the template for different contests
+- Remove unused helper functions before submitting
+- Be aware that identical template code from multiple users can be flagged
 
 ## Troubleshooting
 
