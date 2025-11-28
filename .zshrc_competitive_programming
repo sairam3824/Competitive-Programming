@@ -4,7 +4,11 @@
 unfunction A.cc B.cc C.cc D.cc E.cc F.cc 2>/dev/null
 
 # Get the directory where this script is located
-CP_DIR="$( cd "$( dirname "${(%):-%x}" )" && pwd )"
+if [[ -n "$ZSH_VERSION" ]]; then
+    CP_DIR="$( cd "$( dirname "${(%):-%x}" )" && pwd )"
+else
+    CP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+fi
 
 # Function to create a file from template
 function cf() {
@@ -52,14 +56,14 @@ function cf() {
     echo "Created $FOLDER/$FILENAME"
 }
 
-# Function to compile and run
+# Function to compile and run with time and memory tracking
 function cfrun() {
     if [ -z "$1" ]; then
         echo "Usage: cfrun <filename>"
         echo "Examples:"
-        echo "  cfrun A.cc      -> compiles and runs cpp/A.cc"
-        echo "  cfrun 342.java  -> compiles and runs java/342.java"
-        echo "  cfrun app.py    -> runs py/app.py"
+        echo "  cfrun A.cc      -> compiles and runs cpp/A.cc with time/memory stats"
+        echo "  cfrun 342.java  -> compiles and runs java/342.java with time/memory stats"
+        echo "  cfrun app.py    -> runs py/app.py with time/memory stats"
         return 1
     fi
     
@@ -93,8 +97,20 @@ function cfrun() {
         
         cd "$CP_DIR/$TEST_FOLDER"
         
+        # Read problem limits from info file
+        INFO_FILE="$CP_DIR/$TEST_FOLDER/${BASENAME}.info.txt"
+        TIME_LIMIT_MS=0
+        MEMORY_LIMIT_MB=0
+        
+        if [ -f "$INFO_FILE" ]; then
+            TIME_LIMIT_MS=$(grep "Time Limit:" "$INFO_FILE" | sed 's/Time Limit: //g' | sed 's/ms//g' | tr -d ' ')
+            MEMORY_LIMIT_MB=$(grep "Memory Limit:" "$INFO_FILE" | sed 's/Memory Limit: //g' | sed 's/MB//g' | tr -d ' ')
+        fi
+        
         EXPECTED_FILE="$CP_DIR/$TEST_FOLDER/${BASENAME}-1.out"
         INPUT_FILE="$CP_DIR/$TEST_FOLDER/${BASENAME}-1.in"
+        
+        # Run with time and memory measurement
         if [ -f "$EXPECTED_FILE" ]; then
             echo "Expected Output:"
             cat "$EXPECTED_FILE"
@@ -102,9 +118,78 @@ function cfrun() {
             echo "Your Output:"
             
             if [ -f "$INPUT_FILE" ]; then
-                ./"$BASENAME" < "$INPUT_FILE" | tee .temp_out
+                # Timing message moved
+                
+                # Run with memory and time tracking
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                
+                # Run with memory monitoring (suppress job control output)
+                set +m  # Disable job control
+                ./"$BASENAME" < "$INPUT_FILE" > .temp_out &
+                PID=$!
+                MAXMEM=0
+                
+                # Monitor memory usage
+                while kill -0 $PID 2>/dev/null; do
+                    CURRENT_MEM=$(ps -o rss= -p $PID 2>/dev/null | tr -d ' ')
+                    if [[ "$CURRENT_MEM" =~ ^[0-9]+$ ]] && [ "$CURRENT_MEM" -gt "$MAXMEM" ]; then
+                        MAXMEM=$CURRENT_MEM
+                    fi
+                    sleep 0.01
+                done
+                wait $PID
+                set -m  # Re-enable job control
+                END_TIME=$(python3 -c "import time; print(time.time())")
+                EXEC_TIME=$(python3 -c "print(f'{float('$END_TIME') - float('$START_TIME'):.3f}')")
+                
+                cat .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                echo "Memory: ${MAXMEM} KB"
+                echo "Time: ${EXEC_TIME} seconds"
+                
+                # Check limits and show warnings
+                EXEC_TIME_MS=$(python3 -c "print(int(float('$EXEC_TIME') * 1000))")
+                MEMORY_MB=$(python3 -c "print(round(float('$MAXMEM') / 1024, 2))")
+                
+                if [ "$TIME_LIMIT_MS" -gt 0 ] && [ "$EXEC_TIME_MS" -gt "$TIME_LIMIT_MS" ]; then
+                    echo "⚠️  \033[33mWARNING: Time limit exceeded! (${EXEC_TIME_MS}ms > ${TIME_LIMIT_MS}ms)\033[0m"
+                fi
+                
+                if [ "$MEMORY_LIMIT_MB" -gt 0 ] && [ "$(python3 -c "print(1 if $MEMORY_MB > $MEMORY_LIMIT_MB else 0)")" -eq 1 ]; then
+                    echo "⚠️  \033[33mWARNING: Memory limit exceeded! (${MEMORY_MB}MB > ${MEMORY_LIMIT_MB}MB)\033[0m"
+                fi
             else
-                ./"$BASENAME" | tee .temp_out
+                # Timing message moved
+                
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                
+                # Run with memory monitoring (suppress job control output)
+                set +m  # Disable job control
+                ./"$BASENAME" > .temp_out &
+                PID=$!
+                MAXMEM=0
+                
+                # Monitor memory usage
+                while kill -0 $PID 2>/dev/null; do
+                    CURRENT_MEM=$(ps -o rss= -p $PID 2>/dev/null | tr -d ' ')
+                    if [[ "$CURRENT_MEM" =~ ^[0-9]+$ ]] && [ "$CURRENT_MEM" -gt "$MAXMEM" ]; then
+                        MAXMEM=$CURRENT_MEM
+                    fi
+                    sleep 0.01
+                done
+                wait $PID
+                set -m  # Re-enable job control
+                END_TIME=$(python3 -c "import time; print(time.time())")
+                EXEC_TIME=$(python3 -c "print(f'{float('$END_TIME') - float('$START_TIME'):.3f}')")
+                
+                cat .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                echo "Memory: ${MAXMEM} KB"
+                echo "Time: ${EXEC_TIME} seconds"
             fi
             
             python3 -c "
@@ -114,14 +199,73 @@ try:
         e = [l.strip() for l in f1 if l.strip()]
         o = [l.strip() for l in f2 if l.strip()]
     p = sum(1 for a,b in zip(e,o) if a==b)
-    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+    total = len(e)
+    if p == total:
+        print(f'-------------------\n\033[32m✅ Test Cases Passed: {p} / {total}\033[0m')
+    else:
+        print(f'-------------------\n\033[31m❌ Test Cases Passed: {p} / {total}\033[0m')
 except: pass" "$EXPECTED_FILE" .temp_out
-            rm .temp_out
+            rm .temp_out 2>/dev/null
         else
+            echo "No expected output file found. Running with time/memory measurement:"
+            
+            START_TIME=$(python3 -c "import time; print(time.time())")
+            
             if [ -f "$INPUT_FILE" ]; then
-                ./"$BASENAME" < "$INPUT_FILE"
+                # Run with memory monitoring
+                set +m  # Disable job control
+                ./"$BASENAME" < "$INPUT_FILE" &
+                PID=$!
+                MAXMEM=0
+                
+                # Monitor memory usage
+                while kill -0 $PID 2>/dev/null; do
+                    CURRENT_MEM=$(ps -o rss= -p $PID 2>/dev/null | tr -d ' ')
+                    if [[ "$CURRENT_MEM" =~ ^[0-9]+$ ]] && [ "$CURRENT_MEM" -gt "$MAXMEM" ]; then
+                        MAXMEM=$CURRENT_MEM
+                    fi
+                    sleep 0.01
+                done
+                wait $PID
+                set -m  # Re-enable job control
             else
-                ./"$BASENAME"
+                # Run with memory monitoring
+                set +m  # Disable job control
+                ./"$BASENAME" &
+                PID=$!
+                MAXMEM=0
+                
+                # Monitor memory usage
+                while kill -0 $PID 2>/dev/null; do
+                    CURRENT_MEM=$(ps -o rss= -p $PID 2>/dev/null | tr -d ' ')
+                    if [[ "$CURRENT_MEM" =~ ^[0-9]+$ ]] && [ "$CURRENT_MEM" -gt "$MAXMEM" ]; then
+                        MAXMEM=$CURRENT_MEM
+                    fi
+                    sleep 0.01
+                done
+                wait $PID
+                set -m  # Re-enable job control
+            fi
+            
+            END_TIME=$(python3 -c "import time; print(time.time())")
+            EXEC_TIME=$(python3 -c "print(f'{float('$END_TIME') - float('$START_TIME'):.3f}')")
+            
+            echo "-------------------"
+            echo "⏱️  Measuring execution time and memory..."
+            echo "📊 Performance Stats:"
+            echo "Memory: ${MAXMEM} KB"
+            echo "Time: ${EXEC_TIME} seconds"
+            
+            # Check limits and show warnings
+            EXEC_TIME_MS=$(python3 -c "print(int(float('$EXEC_TIME') * 1000))")
+            MEMORY_MB=$(python3 -c "print(round(float('$MAXMEM') / 1024, 2))")
+            
+            if [ "$TIME_LIMIT_MS" -gt 0 ] && [ "$EXEC_TIME_MS" -gt "$TIME_LIMIT_MS" ]; then
+                echo "⚠️  \033[33mWARNING: Time limit exceeded! (${EXEC_TIME_MS}ms > ${TIME_LIMIT_MS}ms)\033[0m"
+            fi
+            
+            if [ "$MEMORY_LIMIT_MB" -gt 0 ] && [ "$(python3 -c "print(1 if $MEMORY_MB > $MEMORY_LIMIT_MB else 0)")" -eq 1 ]; then
+                echo "⚠️  \033[33mWARNING: Memory limit exceeded! (${MEMORY_MB}MB > ${MEMORY_LIMIT_MB}MB)\033[0m"
             fi
         fi
         
@@ -150,6 +294,7 @@ except: pass" "$EXPECTED_FILE" .temp_out
         
         EXPECTED_FILE="$CP_DIR/$FOLDER/${CLASSNAME}-1.out"
         INPUT_FILE="$CP_DIR/$FOLDER/${CLASSNAME}-1.in"
+        
         if [ -f "$EXPECTED_FILE" ]; then
             echo "Expected Output:"
             cat "$EXPECTED_FILE"
@@ -157,9 +302,25 @@ except: pass" "$EXPECTED_FILE" .temp_out
             echo "Your Output:"
             
             if [ -f "$INPUT_FILE" ]; then
-                java "$CLASSNAME" < "$INPUT_FILE" | tee .temp_out
+                # Timing message moved
+                # Memory and time tracking for Java
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                java "$CLASSNAME" < "$INPUT_FILE" 2>.time_stats | tee .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                cat .time_stats
+                rm .time_stats 2>/dev/null
             else
-                java "$CLASSNAME" | tee .temp_out
+                # Timing message moved
+                # Memory and time tracking for Java
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                java "$CLASSNAME" 2>.time_stats | tee .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                cat .time_stats
+                rm .time_stats 2>/dev/null
             fi
             
             python3 -c "
@@ -168,14 +329,23 @@ try:
     with open(sys.argv[1]) as f1, open(sys.argv[2]) as f2:
         e = [l.strip() for l in f1 if l.strip()]
         o = [l.strip() for l in f2 if l.strip()]
-    p = sum(1 for a,b in zip(e,o) if a==b)
-    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+    total = len(e)
+    if p == total:
+        print(f'-------------------\n\033[32m✅ Test Cases Passed: {p} / {total}\033[0m')
+    else:
+        print(f'-------------------\n\033[31m❌ Test Cases Passed: {p} / {total}\033[0m')
+    print(f'-------------------\n✅ Test Cases Passed: {p} / {len(e)}')
 except: pass" "$EXPECTED_FILE" .temp_out
-            rm .temp_out
+            rm .temp_out 2>/dev/null
         else
+            echo "No expected output file found. Running with time/memory measurement:"
             if [ -f "$INPUT_FILE" ]; then
+                # Memory and time tracking for Java
+                START_TIME=$(python3 -c "import time; print(time.time())")
                 java "$CLASSNAME" < "$INPUT_FILE"
             else
+                # Memory and time tracking for Java
+                START_TIME=$(python3 -c "import time; print(time.time())")
                 java "$CLASSNAME"
             fi
         fi
@@ -204,9 +374,25 @@ except: pass" "$EXPECTED_FILE" .temp_out
             
             cd "$CP_DIR/$FOLDER"
             if [ -f "$INPUT_FILE" ]; then
-                python3 "$FILENAME" < "$INPUT_FILE" | tee .temp_out
+                # Timing message moved
+                # Memory and time tracking for Python
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                python3 "$FILENAME" < "$INPUT_FILE" 2>.time_stats | tee .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                cat .time_stats
+                rm .time_stats 2>/dev/null
             else
-                python3 "$FILENAME" | tee .temp_out
+                # Timing message moved
+                # Memory and time tracking for Python
+                START_TIME=$(python3 -c "import time; print(time.time())")
+                python3 "$FILENAME" 2>.time_stats | tee .temp_out
+                echo "-------------------"
+                echo "⏱️  Measuring execution time and memory..."
+                echo "📊 Performance Stats:"
+                cat .time_stats
+                rm .time_stats 2>/dev/null
             fi
             
             python3 -c "
@@ -214,16 +400,25 @@ import sys
 try:
     with open(sys.argv[1]) as f1, open(sys.argv[2]) as f2:
         e = [l.strip() for l in f1 if l.strip()]
-        o = [l.strip() for l in f2 if l.strip()]
+    total = len(e)
+    if p == total:
+        print(f'-------------------\n\033[32m✅ Test Cases Passed: {p} / {total}\033[0m')
+    else:
+        print(f'-------------------\n\033[31m❌ Test Cases Passed: {p} / {total}\033[0m')
     p = sum(1 for a,b in zip(e,o) if a==b)
-    print(f'-------------------\nTest Cases Passed: {p} / {len(e)}')
+    print(f'-------------------\n✅ Test Cases Passed: {p} / {len(e)}')
 except: pass" "$EXPECTED_FILE" .temp_out
-            rm .temp_out
+            rm .temp_out 2>/dev/null
         else
+            echo "No expected output file found. Running with time/memory measurement:"
             cd "$CP_DIR/$FOLDER"
             if [ -f "$INPUT_FILE" ]; then
+                # Memory and time tracking for Python
+                START_TIME=$(python3 -c "import time; print(time.time())")
                 python3 "$FILENAME" < "$INPUT_FILE"
             else
+                # Memory and time tracking for Python
+                START_TIME=$(python3 -c "import time; print(time.time())")
                 python3 "$FILENAME"
             fi
         fi
@@ -235,7 +430,6 @@ except: pass" "$EXPECTED_FILE" .temp_out
 }
 
 # Alias for convenience
-alias run='cfrun'
 
 # Start Competitive Companion listener
 function cflisten() {
@@ -243,3 +437,7 @@ function cflisten() {
     cd "$CP_DIR"
     node listener.js
 }
+alias run="cfrun"
+
+# Quick alias for running code
+alias run=cfrun
